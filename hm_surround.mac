@@ -1,0 +1,81 @@
+/*選択範囲を囲む
+
+一応動く
+*/
+#g_num=0;
+
+$g_menu[#g_num]			= "#if 1";
+$g_surround[#g_num][0]	= "#if 1";
+$g_surround[#g_num][1]	= "#endif";
+$g_surround[#g_num][2]	= "";
+#g_num=#g_num+1;
+
+$g_menu[#g_num]			= "#if 0";
+$g_surround[#g_num][0]	= "#if 0";
+$g_surround[#g_num][1]	= "#endif";
+$g_surround[#g_num][2]	= "";
+#g_num=#g_num+1;
+
+$g_menu[#g_num]			= "#ifdef";
+$g_surround[#g_num][0]	= "#ifdef";
+$g_surround[#g_num][1]	= "#endif";
+$g_surround[#g_num][2]	= "";
+#g_num=#g_num+1;
+
+//以下、おまけ
+$g_menu[#g_num]			= "{...}";
+$g_surround[#g_num][0]	= "{";
+$g_surround[#g_num][1]	= "}";
+$g_surround[#g_num][2]	= "\t";
+#g_num=#g_num+1;
+
+call Main;
+endmacro;
+
+Main:
+	if(rectselecting){
+		message("矩形選択は未対応です");
+		return;
+	}
+	if(!selecting){
+		message("範囲を選択して下さい");
+		return ;
+	}
+
+	menuarray $g_menu, #g_num;
+	if(0==result){
+		return ;
+	}
+	##index=result-1;
+
+	##old_seltopcolumn=seltopcolumn;
+	##old_seltoplineno=seltoplineno;
+	##old_selendcolumn=selendcolumn;
+	##old_selendlineno=selendlineno;
+
+	disabledraw;
+	escape;
+
+	begingroupundo;
+	movetolineno 1+##old_selendcolumn, ##old_selendlineno;
+	insert("\n");
+	insert($g_surround[##index][1]);
+
+	movetolineno 1+##old_seltopcolumn, ##old_seltoplineno;
+	insert($g_surround[##index][0]);
+	insert("\n");
+
+	$$head_str = $g_surround[##index][2];
+	if("" != $$head_str){
+		//先頭行に文字を挿入
+		##start_lineno  = ##old_seltoplineno + 1;
+		##end_lineno	= ##old_selendlineno + 1;
+		while(##start_lineno <= ##end_lineno){
+			movetolineno 1, ##start_lineno;
+			insert($$head_str);
+			##start_lineno=##start_lineno+1;
+		}
+	}
+
+	endgroupundo;
+	return;
